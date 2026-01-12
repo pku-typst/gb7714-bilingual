@@ -12,7 +12,9 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 - ✅ 支持顺序编码制（numeric）和著者-出版年制（author-date）
 - ✅ 正确处理作者格式化（中文连写、英文姓大写+名首字母）
 - ✅ 支持同作者同年文献消歧（a, b, c 后缀）
-- ✅ 支持多引用合并（`multicite` 函数）
+- ✅ 支持多引用合并（`multicite` 函数，支持带页码）
+- ✅ 支持引用形式切换（上标/非上标/仅作者/仅年份）
+- ✅ 支持带页码引用（supplement 参数）
 - ✅ 支持点击引用跳转到参考文献列表
 - ✅ 完整的文献类型标识
 - ✅ 支持多个 BibTeX 文件
@@ -67,12 +69,53 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 #show: init-gb7714.with(("/main.bib", "/extra.bib"), style: "numeric")
 ```
 
+### 引用形式切换
+
+```typst
+// 默认上标形式
+孔乙己提到#super[@smith2020]的重要发现
+
+// 非上标形式（散文引用）
+另见#cite(<smith2020>, form: "prose")的详细分析
+
+// 仅作者
+研究由#cite(<smith2020>, form: "author")完成
+
+// 仅年份
+该研究发表于#cite(<smith2020>, form: "year")年
+```
+
+### 带页码引用
+
+```typst
+// 简写形式
+关于方法论的讨论见@liu2015[第 3 章]
+具体实验步骤见@liu2015[126--129]
+
+// 函数形式（可结合 form）
+详见#cite(<kopka2004>, form: "prose", supplement: [第 5.2 节])
+```
+
 ### 多引用合并
 
 ```typst
-// 同一作者的多篇文献会自动合并年份
+// 基本用法：同一作者的多篇文献会自动合并年份
 #multicite("smith2020a", "smith2020b", "jones2019")
-// 输出：（Smith，2020a，2020b；Jones，2019）
+// Numeric: [1-3]（上标）
+// Author-date: （Smith，2020a，2020b；Jones，2019）
+
+// 带页码的合并引用
+#multicite(
+  (key: "smith2020a", supplement: [260]),
+  "smith2020b",
+  (key: "jones2019", supplement: [Table 2]),
+)
+// Numeric: [1：260, 2, 3：Table 2]
+// Author-date: （Smith，2020a：260，2020b；Jones，2019：Table 2）
+
+// 非上标形式
+#multicite("smith2020a", "smith2020b", form: "prose")
+// Numeric: [1-2]（非上标）
 ```
 
 ### 自定义渲染（高级）
@@ -83,8 +126,8 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
   for e in entries [
     // 自定义编号格式
     (#e.order)#h(1em)
-    // 使用默认渲染结果
-    #e.rendered
+    // 使用带 label 的渲染结果（支持点击跳转）
+    #e.labeled-rendered
     #parbreak()
   ]
 })
@@ -181,15 +224,22 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 - `entry-type`: 条目类型
 - `fields`: 原始字段字典
 - `parsed-names`: 解析后的作者名
-- `rendered`: 默认渲染结果
-- `ref-label`: 用于跳转的 label 对象
-- `labeled-rendered`: 已附加 label 的渲染结果（推荐）
+- `rendered`: 纯渲染结果（不含 label）
+- `ref-label`: 用于跳转的 label 对象（需手动附加到内容中）
+- `labeled-rendered`: 已附加 label 的渲染结果（推荐使用，或用 `rendered` + `ref-label` 自行组合）
 
-### `multicite(..keys)`
+### `multicite(..keys, form: none)`
 
 多引用合并函数。
 
-- `keys`: 引用键列表
+- `keys`: 引用键列表，支持两种形式：
+  - 字符串：`"smith2020"`
+  - 字典：`(key: "smith2020", supplement: [260])`
+    - `key`: 引用键（必需）
+    - `supplement`: 页码等附加信息（可选）
+- `form`: 引用形式（命名参数）
+  - `none` / `"normal"`: 默认（顺序编码制上标，著者-出版年制整体括号）
+  - `"prose"`: 散文形式（顺序编码制非上标，著者-出版年制仅年份括号）
 
 ## 支持的条目类型
 

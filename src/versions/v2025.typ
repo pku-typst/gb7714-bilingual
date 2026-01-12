@@ -51,12 +51,11 @@
   ),
   // 正文引用格式
   citation: (
-    lparen-zh: "（",
-    rparen-zh: "）",
-    lparen-en: "（",
-    rparen-en: "）",
+    lparen: "（",
+    rparen: "）",
     author-year-sep: "，",
     multi-sep: "；",
+    locator-sep: "：", // 页码分隔符（年份和页码之间）
   ),
   // 术语（中文）
   terms-zh: (

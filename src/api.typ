@@ -62,16 +62,48 @@
       let citations = _collect-citations()
       let cite-config = get-citation-config(current-version)
 
+      // 获取 form 参数（nil, "normal", "prose", "full", "author", "year"）
+      let form = it.form
+
       if current-style == "numeric" {
-        // 顺序编码制: [1]
+        // 顺序编码制
         let order = citations.at(key, default: citations.len() + 1)
-        let supplement = if it.supplement != none {
-          ", " + repr(it.supplement)
+
+        // 处理 supplement（页码等）
+        let supplement-content = if it.supplement != none {
+          [, #it.supplement]
         } else {
-          ""
+          []
         }
-        // 链接到参考文献列表中的条目
-        link(label("gb7714-ref-" + key), super[[#order#supplement]])
+
+        // 根据 form 决定输出形式
+        if form == "author" or form == "year" {
+          // numeric 模式下 author/year 需要从 entry 获取
+          let entry = bib.at(key, default: none)
+          if entry != none {
+            let lang = detect-language(entry)
+            if form == "author" {
+              let author-text = format-author-intext(
+                entry.parsed_names,
+                lang,
+                version: current-version,
+              )
+              link(label("gb7714-ref-" + key), author-text)
+            } else {
+              // form == "year"
+              let year = entry.fields.at("year", default: "n.d.")
+              link(label("gb7714-ref-" + key), str(year))
+            }
+          } else {
+            text(fill: red, "[??" + key + "??]")
+          }
+        } else if form == "prose" or form == "full" {
+          // 非上标形式（散文引用）
+          link(label("gb7714-ref-" + key), [[#order#supplement-content]])
+        } else {
+          // 默认/normal: 上标形式
+          link(label("gb7714-ref-" + key), super[[#order#supplement-content]])
+        }
       } else {
         // 著者-出版年制: （Author，Year）或（Author 等，Year）
         let entry = bib.at(key, default: none)
@@ -90,26 +122,38 @@
           let suffix = suffixes.at(key, default: "")
           let year-with-suffix = str(year) + suffix
 
-          let supplement = if it.supplement != none {
-            cite-config.author-year-sep + repr(it.supplement)
+          // 处理 supplement（页码等）
+          let supplement-content = if it.supplement != none {
+            [#cite-config.author-year-sep#it.supplement]
           } else {
-            ""
+            []
           }
 
-          // 根据版本选择括号
-          let lparen = if lang == "zh" { cite-config.lparen-zh } else {
-            cite-config.lparen-en
-          }
-          let rparen = if lang == "zh" { cite-config.rparen-zh } else {
-            cite-config.rparen-en
-          }
+          // 括号和分隔符
+          let lparen = cite-config.lparen
+          let rparen = cite-config.rparen
           let sep = cite-config.author-year-sep
 
-          // 链接到参考文献列表中的条目
-          link(
-            label("gb7714-ref-" + key),
-            [#lparen#author-text#sep#year-with-suffix#supplement#rparen],
-          )
+          // 根据 form 决定输出形式
+          if form == "author" {
+            // 仅作者
+            link(label("gb7714-ref-" + key), author-text)
+          } else if form == "year" {
+            // 仅年份（带括号）
+            link(label("gb7714-ref-" + key), [#lparen#year-with-suffix#rparen])
+          } else if form == "prose" {
+            // 散文形式: Author (Year) 或 Author（Year）
+            link(
+              label("gb7714-ref-" + key),
+              [#author-text #lparen#year-with-suffix#supplement-content#rparen],
+            )
+          } else {
+            // 默认/normal/full: (Author, Year)
+            link(
+              label("gb7714-ref-" + key),
+              [#lparen#author-text#sep#year-with-suffix#supplement-content#rparen],
+            )
+          }
         } else {
           text(fill: red, "[??" + key + "??]")
         }
@@ -301,23 +345,55 @@
 ///
 /// 用法：
 /// ```typst
+/// // 简单形式（字符串）
 /// #multicite("smith2020a", "smith2020b", "jones2019")
+///
+/// // 混合形式（字符串 + 字典）
+/// #multicite(
+///   (key: "smith2020a", supplement: [260]),
+///   "smith2020b",
+///   (key: "jones2019", supplement: [Ch. 3]),
+/// )
+///
+/// // 非上标形式
+/// #multicite("smith2020a", "smith2020b", form: "prose")
 /// ```
 ///
+/// 参数：
+/// - keys: 引用键列表，每个元素可以是：
+///   - 字符串：引用键
+///   - 字典：(key: 引用键, supplement: 页码)
+/// - form: 引用形式（可选）
+///   - none/"normal": 默认（numeric 上标，author-date 带括号）
+///   - "prose": 非上标形式
+///
 /// 输出：
-/// - numeric 模式：[1-3]（自动压缩连续编号）
-/// - author-date 模式：（Smith，2020a，2020b；Jones，2019）
-#let multicite(..keys) = {
-  let key-list = keys.pos()
+/// - numeric 模式：[1, 260; 2-3]（带 supplement 的单独显示，其他压缩）
+/// - author-date 模式：（Smith，2020a, 260，2020b；Jones，2019, Ch. 3）
+#let multicite(..args) = {
+  let raw-list = args.pos()
+  let form = args.named().at("form", default: none)
 
   // 边界情况：空引用列表
-  if key-list.len() == 0 {
+  if raw-list.len() == 0 {
     return []
   }
 
+  // 规范化参数：将字符串转为字典形式
+  let normalized = raw-list.map(item => {
+    if type(item) == str {
+      (key: item, supplement: none)
+    } else {
+      (
+        key: item.at("key"),
+        supplement: item.at("supplement", default: none),
+      )
+    }
+  })
+
   // 放置所有 metadata 标记（用于收集引用顺序）
-  for key in key-list {
-    _cite-marker(key)
+  for item in normalized {
+    _cite-marker(item.key)
   }
 
   context {
@@ -329,17 +405,50 @@
     let cite-config = get-citation-config(current-version)
 
     if current-style == "numeric" {
-      // 顺序编码制：合并编号，如 [1-3, 5]
-      let orders = key-list.map(key => citations.at(key, default: 0))
-      let formatted = format-citation-numbers(orders)
-      let first-key = key-list.first()
-      link(label("gb7714-ref-" + first-key), super[[#formatted]])
+      // 顺序编码制：保持原始顺序，连续的无 supplement 引用压缩
+      // 格式：[1：250, 2-4]（整体在一个方括号内，用逗号分隔）
+      let parts = ()
+      let pending-orders = () // 待压缩的编号
+
+      for item in normalized {
+        let order = citations.at(item.key, default: 0)
+        if item.supplement != none {
+          // 有 supplement：先输出之前积累的无 supplement 编号，再输出当前
+          if pending-orders.len() > 0 {
+            let formatted = format-citation-numbers(pending-orders)
+            parts.push(formatted)
+            pending-orders = ()
+          }
+          // 编号：页码
+          parts.push([#order#cite-config.locator-sep#item.supplement])
+        } else {
+          // 无 supplement：累积待压缩
+          pending-orders.push(order)
+        }
+      }
+
+      // 处理剩余的无 supplement 编号
+      if pending-orders.len() > 0 {
+        let formatted = format-citation-numbers(pending-orders)
+        parts.push(formatted)
+      }
+
+      let first-key = normalized.first().key
+      let result = parts.join(", ")
+      let linked = link(label("gb7714-ref-" + first-key), [[#result]])
+
+      // 根据 form 决定是否上标
+      if form == "prose" or form == "full" {
+        linked
+      } else {
+        super(linked)
+      }
     } else {
       // 著者-出版年制：按作者分组
       // 收集引用信息
-      let cite-info = key-list
-        .map(key => {
-          let entry = bib.at(key, default: none)
+      let cite-info = normalized
+        .map(item => {
+          let entry = bib.at(item.key, default: none)
           if entry == none {
             return none
           }
@@ -351,13 +460,14 @@
           }
           let lang = detect-language(entry)
           let year = str(entry.fields.at("year", default: "n.d."))
-          let suffix = suffixes.at(key, default: "")
+          let suffix = suffixes.at(item.key, default: "")
           (
-            key: key,
+            key: item.key,
             author: first-author,
             author-count: names.len(),
             year: year + suffix,
             lang: lang,
+            supplement: item.supplement,
           )
         })
         .filter(x => x != none)
@@ -377,8 +487,18 @@
             ),
           )
         }
-        groups.at(info.author).years.push(info.year)
+        // 年份带 supplement
+        let year-entry = if info.supplement != none {
+          (year: info.year, supplement: info.supplement)
+        } else {
+          (year: info.year, supplement: none)
+        }
+        groups.at(info.author).years.push(year-entry)
       }
+
+      // 括号
+      let lparen = cite-config.lparen
+      let rparen = cite-config.rparen
 
       // 渲染每个作者组
       let parts = ()
@@ -389,26 +509,37 @@
         } else {
           author
         }
-        // 去重并连接年份
-        let unique-years = group.years.dedup()
-        let years-text = unique-years.join(cite-config.author-year-sep)
-        parts.push(author-text + cite-config.author-year-sep + years-text)
+        // 连接年份（带 supplement）
+        let years-parts = group.years.map(ye => {
+          if ye.supplement != none {
+            [#ye.year#cite-config.locator-sep#ye.supplement]
+          } else {
+            ye.year
+          }
+        })
+        let years-content = years-parts.join(cite-config.author-year-sep)
+
+        // 根据 form 决定格式
+        if form == "prose" {
+          // prose: Author (2020a, 2020b)
+          parts.push([#author-text #lparen#years-content#rparen])
+        } else {
+          // normal: Author, 2020a, 2020b（整体加括号）
+          parts.push([#author-text#cite-config.author-year-sep#years-content])
+        }
       }
 
       // 用分号连接不同作者
       let result = parts.join(cite-config.multi-sep)
-      let first-key = key-list.first()
+      let first-key = normalized.first().key
 
-      // 根据第一个引用的语言决定括号
-      let first-lang = cite-info.first().lang
-      let lparen = if first-lang == "zh" { cite-config.lparen-zh } else {
-        cite-config.lparen-en
+      if form == "prose" {
+        // prose: 各组已经带括号，直接连接
+        link(label("gb7714-ref-" + first-key), result)
+      } else {
+        // normal: 整体加括号
+        link(label("gb7714-ref-" + first-key), [#lparen#result#rparen])
       }
-      let rparen = if first-lang == "zh" { cite-config.rparen-zh } else {
-        cite-config.rparen-en
-      }
-
-      link(label("gb7714-ref-" + first-key), [#lparen#result#rparen])
     }
   }
 }

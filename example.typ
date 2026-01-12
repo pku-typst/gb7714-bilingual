@@ -52,7 +52,7 @@
 
 科技论文写作是科研工作的重要组成部分。王晓华等#super[@wang2010guide]对中文摘要的写作要点进行了系统分析。在国际期刊方面，Smith 等#super[@smith2020climate]发表了关于气候变化的重要研究成果。
 
-当需要同时引用多篇文献时，可以使用 `multicite` 函数将引用合并为连续编号#super[#multicite("wang2010guide", "smith2020climate", "kopka2004guide")]。
+当需要同时引用多篇文献时，可以使用 `multicite` 函数将引用合并为连续编号#super[#multicite("wang2010guide", "smith2020climate", "kopka2004guide")]。也可以在合并引用中添加页码#super[#multicite((key: "wang2010guide", supplement: [53]), "smith2020climate", (key: "kopka2004guide", supplement: [Ch. 5]))]。
 
 == 专著与学位论文
 
@@ -79,6 +79,21 @@
 == 专利与标准
 
 专利文献记录了技术创新成果。李四和王五#super[@patent2020]申请的图像识别专利展示了深度学习的应用。标准文献则为行业提供规范指导#super[@gb7714]。
+
+== 引用形式与页码
+
+本库支持多种引用形式和带页码引用。
+
+*上标与非上标共存：*
+- 上标形式（默认）：孔乙己提到#super[@smith2020climate]的重要发现
+- 非上标形式：另见#cite(<smith2020climate>, form: "prose")的详细分析
+- 仅作者：研究由#cite(<smith2020climate>, form: "author")完成
+- 仅年份：该研究发表于#cite(<smith2020climate>, form: "year")年
+
+*带页码引用：*
+- 初次引用并指定页码：关于方法论的讨论见#super[@liu2015method[第 3 章]]
+- 再次引用不同页码：具体实验步骤见#super[@liu2015method[126--129]]
+- 非上标带页码：详见#cite(<kopka2004guide>, form: "prose", supplement: [第 5.2 节])
 
 = 结论
 

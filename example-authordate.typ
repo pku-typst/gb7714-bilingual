@@ -59,7 +59,7 @@
 
 == 多文献合并引用
 
-使用 `multicite` 函数可以将多个引用合并在一个括号内。例如，近年来多位学者对相关领域进行了深入研究#multicite("smith2020climate", "smith2020policy", "jones2019conference")。
+使用 `multicite` 函数可以将多个引用合并在一个括号内。例如，近年来多位学者对相关领域进行了深入研究#multicite("smith2020climate", "smith2020policy", "jones2019conference")。也可以在合并引用中添加页码#multicite((key: "smith2020climate", supplement: [260]), "smith2020policy", (key: "jones2019conference", supplement: [Table 2]))。
 
 合并引用时，同一作者的多个文献会自动归组，年份用逗号分隔；不同作者之间用分号分隔。
 
@@ -78,6 +78,21 @@
 == 在线资源与其他类型
 
 在线资源@webpage2024 和预印本@online_article2023 在现代学术研究中越来越重要。专利文献@patent2020 和标准@gb7714 也是重要的参考来源。
+
+== 引用形式与页码
+
+本库支持多种引用形式和带页码引用。
+
+*括号与散文形式共存：*
+- 默认形式（带括号）：关于气候变化的研究@smith2020climate 具有重要意义
+- 散文形式：根据#cite(<smith2020climate>, form: "prose")的研究结果
+- 仅作者：#cite(<smith2020climate>, form: "author")的研究表明
+- 仅年份：该成果发表于#cite(<smith2020climate>, form: "year")
+
+*带页码引用：*
+- 默认带页码：关于方法论的讨论@liu2015method[第 3 章]
+- 散文形式带页码：详见#cite(<kopka2004guide>, form: "prose", supplement: [第 5.2 节])
+- 多页引用：实验步骤见@liu2015method[126--129]
 
 = 结论
 
