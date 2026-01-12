@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Typst
+        uses: typst-community/setup-typst@v4
+
+      - name: Compile examples
+        run: |
+          mkdir -p build
+          # 生成 4 个版本：2015/2025 × numeric/author-date
+          # 使用仓库内字体
+          typst compile example.typ --font-path fonts --input version=2015 build/example-2015-numeric.pdf
+          typst compile example.typ --font-path fonts --input version=2025 build/example-2025-numeric.pdf
+          typst compile example-authordate.typ --font-path fonts --input version=2015 build/example-2015-authordate.pdf
+          typst compile example-authordate.typ --font-path fonts --input version=2025 build/example-2025-authordate.pdf
+
+      - name: Upload PDF artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: examples
+          path: build/*.pdf
+          retention-days: 30
+
+      - name: Prepare GitHub Pages
+        run: |
+          mkdir -p docs
+          cp build/*.pdf docs/
+          cp .github/pages/index.html docs/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

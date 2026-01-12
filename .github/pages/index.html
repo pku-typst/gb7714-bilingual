@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gb7714-bilingual - GB/T 7714 双语参考文献</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+        background: #fafafa;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      a {
+        color: #3498db;
+      }
+      .downloads {
+        margin: 2rem 0;
+      }
+      .downloads a {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        margin-right: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .downloads a:hover {
+        background: #2980b9;
+      }
+      pre {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+      code {
+        font-family: "Fira Code", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>gb7714-bilingual</h1>
+    <p>GB/T 7714—2015/2025 双语参考文献 Typst 库</p>
+    <h2>GB/T 7714—2025（2026-07-01 实施）</h2>
+    <div class="downloads">
+      <a href="example-2025-numeric.pdf">📄 顺序编码制</a>
+      <a href="example-2025-authordate.pdf">📄 著者-出版年制</a>
+    </div>
+    <h2>GB/T 7714—2015</h2>
+    <div class="downloads">
+      <a href="example-2015-numeric.pdf">📄 顺序编码制</a>
+      <a href="example-2015-authordate.pdf">📄 著者-出版年制</a>
+    </div>
+    <h2>快速开始</h2>
+    <pre><code>#import "@preview/gb7714-bilingual:0.1.0": init-gb7714, gb7714-bibliography
+
+#show: init-gb7714.with("/ref.bib", style: "numeric")
+
+正文中使用 @key 引用...
+
+#gb7714-bibliography()</code></pre>
+    <h2>链接</h2>
+    <ul>
+      <li>
+        <a href="https://github.com/pku-typst/gb7714-bilingual">GitHub 仓库</a>
+      </li>
+      <li>
+        <a href="https://typst.app/universe/package/gb7714-bilingual"
+          >Typst Universe</a
+        >
+      </li>
+    </ul>
+  </body>
+</html>
