@@ -1,6 +1,6 @@
 // GB/T 7714 双语参考文献系统 - 公共 API
 
-#import "@preview/citegeist:0.2.0": load-bibliography
+#import "@preview/citegeist:0.2.1": load-bibliography
 
 #import "core/state.typ": (
   _bib-data, _cite-marker, _collect-citations, _compute-year-suffixes, _config,
