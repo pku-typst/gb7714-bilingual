@@ -35,6 +35,7 @@
 
 // 计算年份后缀（用于 author-date 模式消歧）
 // 返回 key -> suffix 的映射，如 ("smith2020a": "a", "smith2020b": "b")
+// 根据 GB/T 7714-2025 9.3.1.3，后缀按引用顺序分配
 #let _compute-year-suffixes(bib, citations) = {
   // 按 (第一作者姓, 年份) 分组
   let groups = (:)
@@ -54,15 +55,18 @@
     }
     groups
       .at(group-key)
-      .push((key: key, title: entry.fields.at("title", default: "")))
+      .push((
+        key: key,
+        order: citations.at(key), // 引用顺序
+      ))
   }
 
   // 为每组分配后缀
   let suffixes = (:)
   for (group-key, items) in groups.pairs() {
     if items.len() > 1 {
-      // 按标题排序
-      let sorted-items = items.sorted(key: it => it.title)
+      // 按引用顺序排序（根据 GB/T 7714-2025 9.3.1.3）
+      let sorted-items = items.sorted(key: it => it.order)
       let suffix-chars = "abcdefghijklmnopqrstuvwxyz"
       for (i, item) in sorted-items.enumerate() {
         if i < suffix-chars.len() {

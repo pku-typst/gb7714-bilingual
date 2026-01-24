@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Name suffix formatting: removed comma before suffix (per GB/T 7714-2025 examples)
   - Before: `King M L, Jr.`
   - After: `King M L Jr.`
+- Year suffix disambiguation now uses citation order instead of title alphabetical order (per GB/T 7714-2025 9.3.1.3)
+  - Before: suffixes assigned by title sort (could produce a, c, b)
+  - After: suffixes assigned by citation order (always a, b, c in order of appearance)
+- Invisible hidden bibliography title no longer triggers unexpected page break with `pagebreak(weak: true)` ([#4](https://github.com/pku-typst/gb7714-bilingual/pull/4) by [@Coekjan](https://github.com/Coekjan))
 
 ## [0.2.0] - 2026-01-21
 
