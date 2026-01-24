@@ -21,7 +21,7 @@
 ### 1.1 基本用法
 
 ```typst
-#import "@preview/gb7714-bilingual:0.2.0": init-gb7714, gb7714-bibliography, multicite
+#import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
 
 // 初始化（使用 read() 读取文件内容）
 #show: init-gb7714.with(read("ref.bib"), style: "numeric", version: "2025")

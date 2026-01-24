@@ -3,7 +3,7 @@
 // 基于 citegeist 自定义实现，支持中英文术语自动切换
 //
 // 使用方法：
-//   #import "@preview/gb7714-bilingual:0.2.0": init-gb7714, gb7714-bibliography, multicite
+//   #import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
 //   #show: init-gb7714.with(read("ref.bib"), style: "numeric", version: "2025")
 //   正文中使用 @key 引用...
 //   #gb7714-bibliography()

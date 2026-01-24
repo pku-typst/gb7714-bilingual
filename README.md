@@ -23,7 +23,7 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 ## 安装
 
 ```typst
-#import "@preview/gb7714-bilingual:0.2.0": init-gb7714, gb7714-bibliography, multicite
+#import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
 ```
 
 ## 使用方法
@@ -31,7 +31,7 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 ### 基本用法
 
 ```typst
-#import "@preview/gb7714-bilingual:0.2.0": init-gb7714, gb7714-bibliography, multicite
+#import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
 
 // 使用 2025 版本（默认）
 #show: init-gb7714.with(read("ref.bib"), style: "numeric", version: "2025")
