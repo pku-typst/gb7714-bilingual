@@ -209,7 +209,12 @@
       if entry == none { return none }
 
       let lang = detect-language(entry)
-      let year-suffix = suffixes.at(key, default: "")
+      // 顺序编码制不需要年份后缀消歧（用编号区分）
+      let year-suffix = if current-style == "numeric" {
+        ""
+      } else {
+        suffixes.at(key, default: "")
+      }
       let rendered = render-entry(
         entry,
         lang,
