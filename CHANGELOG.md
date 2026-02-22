@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- `full` parameter to `gb7714-bibliography()` for displaying all entries (even uncited)
+- `get-all-entries()` function for retrieving all bibliography entries
+- `multicite` now accepts content body with `@key` references: `#multicite[@smith2020 @jones2021]`. Supports supplements via `@key[p. 42]` syntax. Existing string/dict API remains fully supported.
+
+### Changed
+
+- `title: auto` now uses `text.lang` (document body language) instead of checking bibliography sources' language field, matching Typst's native behavior
+- Sort key now considers year for entries with the same author name
+
+### Fixed
+
+- URL and DOI now render as clickable hyperlinks in PDF (using `link()` function)
+- Fixed sorting for `@collection` type: now uses editor as fallback when author is missing
+- Fixed sorting for anonymous entries: now considers language ("Anonymous" vs "佚 名")
+
 ## [0.2.1] - 2026-01-24
 
 ### Added

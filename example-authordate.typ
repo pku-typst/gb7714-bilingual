@@ -4,6 +4,9 @@
 
 #import "lib.typ": gb7714-bibliography, init-gb7714, multicite
 
+// 设置语言为中文
+#set text(lang: "zh")
+
 // 从命令行获取版本，默认 2025
 #let version = sys.inputs.at("version", default: "2025")
 
@@ -104,4 +107,4 @@
 
 著者-出版年制适合人文社科领域的学术写作。gb7714-bilingual 库完整支持 GB/T 7714—2025 的著者-出版年制规则，包括自动消歧、多文献合并、中英文自动识别等功能。
 
-#gb7714-bibliography()
+#gb7714-bibliography(full: true)

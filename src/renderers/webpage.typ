@@ -81,24 +81,20 @@
     result = result.trim(".") + "." + date-part
   }
 
-  // URL（网页文献的关键信息）
+  // URL（网页文献的关键信息，可点击链接）
   if config.show-url and url != "" {
-    result += ". " + url
+    let url-link = link(url, url)
+    result = [#result. #url-link]
   }
 
   // DOI
   let doi = f.at("doi", default: "")
   if config.show-doi and doi != "" {
-    if not result.ends-with(".") {
-      result += "."
-    }
-    result += " DOI:" + doi
+    let doi-link = link("https://doi.org/" + doi, [DOI: #doi])
+    result = [#result #doi-link]
   }
 
   // 确保以句号结尾
-  if not result.ends-with(".") {
-    result += "."
-  }
-
+  // 检查 result 是否以句号结尾（需要处理内容类型）
   result
 }

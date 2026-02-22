@@ -4,6 +4,9 @@
 
 #import "lib.typ": gb7714-bibliography, init-gb7714, multicite
 
+// 设置语言为中文
+#set text(lang: "zh")
+
 // 从命令行获取版本和风格
 #let version = sys.inputs.at("version", default: "2025")
 #let style = sys.inputs.at("style", default: "numeric")
@@ -53,7 +56,7 @@
 
 科技论文写作是科研工作的重要组成部分。王晓华等@wang2010guide 对中文摘要的写作要点进行了系统分析。在国际期刊方面，Smith 等@smith2020climate 发表了关于气候变化的重要研究成果。
 
-当需要同时引用多篇文献时，可以使用 `multicite` 函数将引用合并为连续编号#multicite("wang2010guide", "smith2020climate", "kopka2004guide")。也可以在合并引用中添加页码#multicite((key: "wang2010guide", supplement: [53]), "smith2020climate", (key: "kopka2004guide", supplement: [Ch. 5]))。
+当需要同时引用多篇文献时，可以使用 `multicite` 函数将引用合并为连续编号#multicite("wang2010guide", "smith2020climate", "kopka2004guide")。也可以在合并引用中添加页码#multicite((key: "wang2010guide", supplement: [53]), "smith2020climate", (key: "kopka2004guide", supplement: [Ch. 5]))。还支持内容体形式：#multicite[@wang2010guide @smith2020climate @kopka2004guide] 和带页码形式：#multicite[@wang2010guide[p. 53] @smith2020climate]。
 
 == 专著与学位论文
 
