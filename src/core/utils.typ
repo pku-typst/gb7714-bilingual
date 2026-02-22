@@ -20,7 +20,10 @@
   (
     parts
       .map(p => {
-        if p.ends-with(".") or p.ends-with(",") or p.ends-with(";") {
+        if (
+          type(p) == str
+            and (p.ends-with(".") or p.ends-with(",") or p.ends-with(";"))
+        ) {
           p.slice(0, -1)
         } else {
           p
@@ -46,23 +49,40 @@
   if config.show-accessed {
     let accessed = format-accessed-date(entry)
     if accessed != "" {
-      mut = mut.trim(".") + accessed + "."
+      // 移除末尾句号以便添加访问日期
+      if type(mut) == str {
+        mut = mut.trim(".") + accessed + "."
+      } else {
+        mut = [#mut #accessed]
+      }
     }
   }
 
   // 确保有结尾句号
-  if not mut.ends-with(".") {
-    mut += "."
+  if type(mut) == str {
+    if not mut.ends-with(".") {
+      mut += "."
+    }
   }
 
-  // URL
+  // URL (可点击链接)
   if config.show-url and url != "" {
-    mut += " " + url + "."
+    let url-link = link(url, url)
+    if type(mut) == str {
+      mut += " " + url-link + "."
+    } else {
+      mut = [#mut #url-link]
+    }
   }
 
-  // DOI
+  // DOI (可点击链接)
   if config.show-doi and doi != "" {
-    mut += " DOI:" + doi + "."
+    let doi-link = link("https://doi.org/" + doi, [DOI: #doi])
+    if type(mut) == str {
+      mut += " " + doi-link + "."
+    } else {
+      mut = [#mut #doi-link]
+    }
   }
 
   mut

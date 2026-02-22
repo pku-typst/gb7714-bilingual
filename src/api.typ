@@ -193,6 +193,55 @@
 /// }
 /// ```
 /// config 参数可选，默认显示所有
+
+// 排序辅助函数（被 get-cited-entries 和 get-all-entries 共用）
+#let _get-sort-key-for-name(name) = {
+  let prefix = name.at("prefix", default: "")
+  let family = name.at("family", default: "")
+  if prefix != "" {
+    prefix + " " + family
+  } else {
+    family
+  }
+}
+
+#let _sort-entries(entries, style) = {
+  if style == "numeric" {
+    entries.sorted(key: it => it.order)
+  } else {
+    // author-date: 按作者姓名排序，同作者则按第二个作者排序，以此类推，最后按年份排序
+    entries.sorted(key: it => {
+      // 获取排序用的名字（优先 author，其次 editor）
+      let names = it.parsed-names.at("author", default: ())
+      if names.len() == 0 {
+        names = it.parsed-names.at("editor", default: ())
+      }
+
+      // 构建所有作者的排序键元组
+      let name-sort-keys = ()
+      if names.len() > 0 {
+        for name in names {
+          name-sort-keys.push(lower(_get-sort-key-for-name(name)))
+        }
+      } else {
+        // 无作者/编辑者时，根据语言使用排序键
+        if it.lang == "en" {
+          name-sort-keys.push("anonymous")
+        } else {
+          name-sort-keys.push("佚") // 佚 名 排在中文最后
+        }
+      }
+
+      // 获取年份用于次级排序
+      let year-sort-key = it.fields.at("year", default: "")
+
+      // 返回元组：(所有作者排序键..., 年份)
+      name-sort-keys.push(year-sort-key)
+      name-sort-keys
+    })
+  }
+}
+
 #let get-cited-entries(
   config: (show-url: true, show-doi: true, show-accessed: true),
 ) = {
@@ -242,23 +291,120 @@
     .filter(x => x != none)
 
   // 排序
-  if current-style == "numeric" {
-    entries.sorted(key: it => it.order)
-  } else {
-    // CSL: demote-non-dropping-particle="never"
-    // prefix 参与排序："van Beethoven" 排在 V，"de Gaulle" 排在 D
-    // 使用小写进行排序（大小写不敏感）
-    entries.sorted(key: it => {
-      let names = it.parsed-names.at("author", default: ())
-      if names.len() > 0 {
-        let first = names.first()
-        let prefix = first.at("prefix", default: "")
-        let family = first.at("family", default: "")
-        let sort-key = if prefix != "" { prefix + " " + family } else { family }
-        lower(sort-key)
-      } else { "" }
+  _sort-entries(entries, current-style)
+}
+
+/// 获取所有参考文献条目（即使未被引用）
+///
+/// 当 `full: true` 时使用此函数代替 `get-cited-entries()`
+///
+/// config 参数可选，默认显示所有
+#let get-all-entries(
+  config: (show-url: true, show-doi: true, show-accessed: true),
+) = {
+  let bib = _bib-data.get()
+  let citations = _collect-citations()
+  let current-style = _style.get()
+  let current-version = _version.get()
+  let suffixes = _compute-year-suffixes(bib, citations)
+
+  // 按引用顺序为所有被引用的条目分配顺序号
+  let cited-keys = citations.keys()
+  let cited-count = cited-keys.len()
+
+  // 处理被引用的条目（按引用顺序）
+  let cited-entries = cited-keys
+    .enumerate()
+    .map(((i, key)) => {
+      let entry = bib.at(key)
+      let lang = detect-language(entry)
+
+      // 顺序编码制不需要年份后缀消歧（用编号区分）
+      let year-suffix = if current-style == "numeric" {
+        ""
+      } else {
+        suffixes.at(key, default: "")
+      }
+      let rendered = render-entry(
+        entry,
+        lang,
+        year-suffix: year-suffix,
+        style: current-style,
+        version: current-version,
+        config: config,
+      )
+
+      let ref-label = label("gb7714-ref-" + key)
+      (
+        key: key,
+        order: i + 1,
+        year-suffix: year-suffix,
+        lang: lang,
+        entry-type: entry.at("entry_type", default: "misc"),
+        fields: entry.at("fields", default: (:)),
+        parsed-names: entry.at("parsed_names", default: (:)),
+        rendered: rendered,
+        ref-label: ref-label,
+        labeled-rendered: [#rendered #ref-label],
+        is-cited: true,
+      )
     })
+
+  // 处理未被引用的条目
+  let bib-keys = bib.keys()
+  let uncited-keys = bib-keys.filter(k => (
+    citations.at(k, default: none) == none
+  ))
+
+  let uncited-entries = uncited-keys
+    .enumerate()
+    .map(((i, key)) => {
+      let entry = bib.at(key)
+      let lang = detect-language(entry)
+
+      // 顺序编码制不需要年份后缀消歧（用编号区分）
+      let year-suffix = if current-style == "numeric" {
+        ""
+      } else {
+        suffixes.at(key, default: "")
+      }
+      let rendered = render-entry(
+        entry,
+        lang,
+        year-suffix: year-suffix,
+        style: current-style,
+        version: current-version,
+        config: config,
+      )
+
+      let ref-label = label("gb7714-ref-" + key)
+      (
+        key: key,
+        order: cited-count + i + 1,
+        year-suffix: year-suffix,
+        lang: lang,
+        entry-type: entry.at("entry_type", default: "misc"),
+        fields: entry.at("fields", default: (:)),
+        parsed-names: entry.at("parsed_names", default: (:)),
+        rendered: rendered,
+        ref-label: ref-label,
+        labeled-rendered: [#rendered #ref-label],
+        is-cited: false,
+      )
+    })
+
+  // 合并并排序
+  let all-entries = cited-entries + uncited-entries
+  all-entries = _sort-entries(all-entries, current-style)
+
+  // 重新分配 order（author-date 模式下按排序后的顺序）
+  if current-style == "author-date" {
+    for (i, e) in all-entries.enumerate() {
+      e.order = i + 1
+    }
   }
+
+  all-entries
 }
 
 // ============================================================================
@@ -268,9 +414,10 @@
 /// 渲染参考文献列表（高层 API）
 ///
 /// - title: 参考文献标题
-///   - `auto`（默认）：根据文献语言自动选择（"参考文献" 或 "References"），一级标题
+///   - `auto`（默认）：根据正文语言自动选择（"参考文献" 或 "References"），一级标题
 ///   - `none`：不显示标题
 ///   - 自定义内容：直接显示（可传入 `heading(level: 2)[...]` 控制级别）
+/// - full: 是否显示所有参考文献（即使未被引用），默认 false
 /// - full-control: 完全控制渲染的回调函数（可选）
 ///   - 签名：`(entries) => content`
 ///   - entries: 由 `get-cited-entries()` 返回的数组
@@ -284,6 +431,9 @@
 /// // 自定义标题级别
 /// #gb7714-bibliography(title: heading(level: 2)[参考文献])
 ///
+/// // 显示所有参考文献（即使未被引用）
+/// #gb7714-bibliography(full: true)
+///
 /// // 完全自定义渲染
 /// #gb7714-bibliography(full-control: entries => {
 ///   for e in entries [
@@ -294,22 +444,18 @@
 /// ```
 #let gb7714-bibliography(
   title: auto,
+  full: false,
   full-control: none,
 ) = {
   context {
     let bib = _bib-data.get()
 
-    // 处理 auto 标题
+    // 处理 auto 标题 - 基于正文语言而非文献语言
     let actual-title = title
     if title == auto {
-      let has-chinese = bib
-        .values()
-        .any(entry => {
-          let f = entry.at("fields", default: (:))
-          let lang = lower(f.at("language", default: ""))
-          lang.contains("zh") or lang.contains("chinese")
-        })
-      actual-title = heading(numbering: none, if has-chinese {
+      let text-lang = text.lang
+      let is-chinese = text-lang == "zh"
+      actual-title = heading(numbering: none, if is-chinese {
         "参考文献"
       } else { "References" })
     }
@@ -320,7 +466,12 @@
     }
 
     let current-config = _config.get()
-    let entries = get-cited-entries(config: current-config)
+    // 根据 full 参数选择获取所有条目或仅获取被引用的条目
+    let entries = if full {
+      get-all-entries(config: current-config)
+    } else {
+      get-cited-entries(config: current-config)
+    }
     let current-style = _style.get()
 
     // 如果用户提供了 full-control，完全交给用户
@@ -360,12 +511,17 @@
 ///
 /// // 非上标形式
 /// #multicite("smith2020a", "smith2020b", form: "prose")
+///
+/// // 内容体形式（支持 @key 引用和页码）
+/// #multicite[@smith2020 @jones2021]
+/// #multicite[@smith2020[p. 42] @jones2021]
 /// ```
 ///
 /// 参数：
 /// - keys: 引用键列表，每个元素可以是：
 ///   - 字符串：引用键
 ///   - 字典：(key: 引用键, supplement: 页码)
+///   - 内容体中的 @key 引用
 /// - form: 引用形式（可选）
 ///   - none/"normal": 默认（numeric 上标，author-date 带括号）
 ///   - "prose": 非上标形式
@@ -382,17 +538,46 @@
     return []
   }
 
-  // 规范化参数：将字符串转为字典形式
-  let normalized = raw-list.map(item => {
-    if type(item) == str {
-      (key: item, supplement: none)
+  // 内容体形式：#multicite[@key1 @key2 ...]
+  // 当传入内容体时，会作为一个 content 类型的 positional 参数到达
+  let normalized = if (
+    raw-list.len() == 1 and type(raw-list.first()) == content
+  ) {
+    let body = raw-list.first()
+    let children = if body.has("children") {
+      body.children
     } else {
-      (
-        key: item.at("key"),
-        supplement: item.at("supplement", default: none),
-      )
+      (body,)
     }
-  })
+    children
+      .filter(it => it != [ ] and it != parbreak())
+      .map(it => {
+        if it.func() == ref {
+          // @key 或 @key[supplement]
+          let key = str(it.target)
+          let supp = it.at("supplement", default: none)
+          // ref supplement 为 auto 时表示没有指定 supplement
+          let supp = if supp == auto { none } else { supp }
+          (key: key, supplement: supp)
+        } else {
+          // 忽略其他内容（如普通文字）
+          none
+        }
+      })
+      .filter(it => it != none)
+  } else {
+    // 传统形式：字符串或字典参数
+    raw-list.map(item => {
+      if type(item) == str {
+        (key: item, supplement: none)
+      } else {
+        (
+          key: item.at("key"),
+          supplement: item.at("supplement", default: none),
+        )
+      }
+    })
+  }
 
   // 放置所有 metadata 标记（用于收集引用顺序）
   for item in normalized {
