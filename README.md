@@ -23,7 +23,7 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 ## 安装
 
 ```typst
-#import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
+#import "@preview/gb7714-bilingual:0.2.2": init-gb7714, gb7714-bibliography, multicite
 ```
 
 ## 使用方法
@@ -31,7 +31,7 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 ### 基本用法
 
 ```typst
-#import "@preview/gb7714-bilingual:0.2.1": init-gb7714, gb7714-bibliography, multicite
+#import "@preview/gb7714-bilingual:0.2.2": init-gb7714, gb7714-bibliography, multicite
 
 // 使用 2025 版本（默认）
 #show: init-gb7714.with(read("ref.bib"), style: "numeric", version: "2025")
@@ -116,6 +116,16 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 // Numeric: [1-2]（非上标）
 ```
 
+### 显示所有参考文献
+
+```typst
+// 默认只显示被引用的文献
+#gb7714-bibliography()
+
+// 显示所有 bib 条目（包括未被引用的）
+#gb7714-bibliography(full: true)
+```
+
 ### 自定义渲染（高级）
 
 ```typst
@@ -197,14 +207,16 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
   - `"2015"`: GB/T 7714—2015
   - `"2025"`: GB/T 7714—2025（默认）
 
-### `gb7714-bibliography(title: auto, full-control: none)`
+### `gb7714-bibliography(title: auto, full: false, full-control: none)`
 
 渲染参考文献列表。
 
 - `title`: 参考文献标题
-  - `auto`（默认）：根据文献语言自动选择（"参考文献" 或 "References"），一级标题
+  - `auto`（默认）：根据正文语言自动选择（"参考文献" 或 "References"），一级标题
   - `none`：不显示标题
   - 自定义内容：如 `heading(level: 2)[References]`
+- `full`: 是否显示所有参考文献（即使未被引用），默认 `false`
+  - `true`：显示所有 bib 条目，被引用的在前，未引用的在后
 - `full-control`: 完全控制渲染的回调函数（高级用法）
   - 签名：`(entries) => content`
   - 使用此参数时，用户完全控制输出格式
@@ -230,11 +242,14 @@ GB/T 7714 双语参考文献系统，支持中英文术语自动切换。
 
 多引用合并函数。
 
-- `keys`: 引用键列表，支持两种形式：
+- `keys`: 引用键列表，支持三种形式：
   - 字符串：`"smith2020"`
   - 字典：`(key: "smith2020", supplement: [260])`
     - `key`: 引用键（必需）
     - `supplement`: 页码等附加信息（可选）
+  - 内容体中的 `@key` 引用：
+    - `#multicite[@smith2020 @jones2021]`
+    - `#multicite[@smith2020[p. 42] @jones2021]`（带页码）
 - `form`: 引用形式（命名参数）
   - `none` / `"normal"`: 默认（顺序编码制上标，著者-出版年制整体括号）
   - `"prose"`: 散文形式（顺序编码制非上标，著者-出版年制仅年份括号）
