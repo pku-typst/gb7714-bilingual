@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `order` field reassignment after author-date sorting was a no-op due to Typst value-type semantics in `for` loops; fixed in both `get-cited-entries` and `get-all-entries`
+- Hidden bibliography no longer affects layout positioning and page breaks (wrap `bibliography()` in `place()` before `hide()` so it occupies zero flow space)
 
 ## [0.2.2] - 2026-02-22
 
