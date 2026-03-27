@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.2.3] - 2026-03-27
+
 ### Added
 
 - `cn-first` parameter for author-date style: controls whether Chinese entries appear before (`true`, default) or after (`false`) non-Chinese entries in the bibliography
