@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `cn-first` parameter for author-date style: controls whether Chinese entries appear before (`true`, default) or after (`false`) non-Chinese entries in the bibliography
-- `pinyin-override` parameter: passes through to `auto-pinyin`'s `to-pinyin(..., override: ...)` for polyphone disambiguation (e.g., `(重: "cho2ng")`)
+- `pinyin-override` parameter: passes through to `auto-pinyin`'s `to-pinyin(..., override: ...)` for polyphone disambiguation (e.g., `(重: "chong2")`)
 - Dependency on `auto-pinyin` 0.1.0
+- Preprint/arXiv auto-detection: `@misc` with `archivePrefix = {arXiv}` or journal containing "arxiv" is now identified as preprint (`[PP/OL]` in 2025, `[A/OL]` in 2015). Also supports `entrysubtype`/`note` = `"preprint"` and `@unpublished` with arXiv fields.
 
 ### Changed
 

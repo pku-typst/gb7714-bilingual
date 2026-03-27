@@ -47,6 +47,7 @@
     "software": "CP",
     "online": "EB",
     "webpage": "EB",
+    "unpublished": "Z",
     "archive": "A",
     "misc": "Z",
   ),

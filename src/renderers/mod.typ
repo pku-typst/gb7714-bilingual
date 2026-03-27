@@ -35,6 +35,9 @@
   // 报告
   "techreport": render-report,
   "report": render-report,
+  // 预印本/档案
+  "preprint": render-article,
+  "unpublished": render-article,
   // 网页/在线资源
   "online": render-webpage,
   "webpage": render-webpage,
@@ -83,7 +86,29 @@
     }
   }
 
+  // 预印本：entrysubtype/note = "preprint"
+  if raw-type in ("article", "misc", "unpublished", "unknown") {
+    if subtype == "preprint" or note == "preprint" {
+      return "preprint"
+    }
+  }
+
   none
+}
+
+// 通过字段启发式检测预印本（arXiv 等）
+#let _is-preprint-entry(entry) = {
+  let f = entry.at("fields", default: (:))
+  // eprint + archiveprefix/eprinttype（biblatex 风格 arXiv 导出）
+  let eprint = f.at("eprint", default: "")
+  if eprint != "" {
+    let prefix = lower(f.at("archiveprefix", default: f.at("eprinttype", default: "")))
+    if prefix == "arxiv" { return true }
+  }
+  // journal 包含 "arxiv"（常见的手写形式）
+  let journal = lower(f.at("journal", default: f.at("journaltitle", default: "")))
+  if journal.contains("arxiv") { return true }
+  false
 }
 
 /// 根据类型选择渲染函数
@@ -120,7 +145,8 @@
       "CP": "misc", // 计算机程序
       "CM": "misc", // 地图
       "DS": "misc", // 数据集
-      "A": "misc", // 档案
+      "A": "preprint", // 档案/预印本
+      "PP": "preprint", // 预印本（2025）
       "Z": "misc", // 其他
     )
     mark-to-type.at(upper(mark), default: raw-type)
@@ -132,6 +158,8 @@
     } else if raw-type == "unknown" and _is-standard-entry(entry) {
       // 标准文献：通过 number 前缀检测（可靠）
       "standard"
+    } else if raw-type in ("misc", "unpublished", "unknown") and _is-preprint-entry(entry) {
+      "preprint"
     } else {
       raw-type
     }
