@@ -34,6 +34,10 @@
 }
 
 // 使用指定版本的著者-出版年制
+// 可选：cn-first: true（默认，中文文献在前）或 false（外文在前）
+// 可选：pinyin-override（与 to-pinyin 的 tone-num-end 音节一致），例如：
+//   pinyin-override: (重: "cho2ng")
+//   pinyin-override: (重庆: ("cho2ng", "qi4ng"))
 #show: init-gb7714.with(
   read("example.bib"),
   style: "author-date",

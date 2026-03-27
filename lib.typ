@@ -29,6 +29,8 @@
 /// - show-url: 是否显示 URL（默认 true）
 /// - show-doi: 是否显示 DOI（默认 true）
 /// - show-accessed: 是否显示访问日期（默认 true）
+/// - cn-first: 仅 `style: "author-date"`。`true`（默认）中文条目排在外文之前，`false` 外文在前
+/// - pinyin-override: 仅 author-date 下中文条目；`to-pinyin(..., style: "tone-num-end", override: ...)`，音节与 tone-num-end 一致
 #let init-gb7714(
   bib-content,
   style: "numeric",
@@ -36,6 +38,8 @@
   show-url: true,
   show-doi: true,
   show-accessed: true,
+  cn-first: true,
+  pinyin-override: (:),
   doc,
 ) = {
   // 调用内部实现
@@ -46,6 +50,8 @@
     show-url: show-url,
     show-doi: show-doi,
     show-accessed: show-accessed,
+    cn-first: cn-first,
+    pinyin-override: pinyin-override,
     doc,
   )
 }

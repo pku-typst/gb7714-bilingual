@@ -2,9 +2,11 @@
 
 #import "@preview/citegeist:0.2.2": load-bibliography
 
+#import "@preview/auto-pinyin:0.1.0": to-pinyin
+
 #import "core/state.typ": (
   _bib-data, _cite-marker, _collect-citations, _compute-year-suffixes, _config,
-  _style, _version,
+  _style, _version, _cn-first, _pinyin-override,
 )
 #import "core/language.typ": detect-language
 #import "core/utils.typ": format-citation-numbers
@@ -21,6 +23,9 @@
 /// - show-url: 是否显示 URL（默认 true）
 /// - show-doi: 是否显示 DOI（默认 true）
 /// - show-accessed: 是否显示访问日期（默认 true）
+/// - cn-first: 仅 `style: "author-date"`。`true`（默认）中文条目排在外文之前，`false` 外文在前
+/// - pinyin-override: 仅 `author-date` 且中文条目。传给 `to-pinyin(..., style: "tone-num-end", override: ...)`；
+///   override 中的音节须与 `tone-num-end` 形式一致（如 `cho2ng`），见 auto-pinyin 文档
 #let init-gb7714-impl(
   bib-content,
   style: "numeric",
@@ -28,6 +33,8 @@
   show-url: true,
   show-doi: true,
   show-accessed: true,
+  cn-first: true,
+  pinyin-override: (:),
   doc,
 ) = {
   // 加载 bib 数据
@@ -44,6 +51,8 @@
     show-doi: show-doi,
     show-accessed: show-accessed,
   ))
+  _cn-first.update(cn-first)
+  _pinyin-override.update(pinyin-override)
 
   // 拦截 cite 元素
   show cite: it => {
@@ -205,11 +214,40 @@
   }
 }
 
+// 著者-出版年制：单作者姓氏（含西文 prefix）的排序用字符串
+#let _family-sort-key-author-date(name, lang, pinyin-override) = {
+  let raw = _get-sort-key-for-name(name)
+  if lang == "zh" {
+    to-pinyin(raw, style: "tone-num-end", override: pinyin-override).join("")
+  } else {
+    lower(raw)
+  }
+}
+
+#let _anonymous-sort-key-author-date(lang, pinyin-override) = {
+  if lang == "zh" {
+    to-pinyin("佚名", style: "tone-num-end", override: pinyin-override).join("")
+  } else {
+    "anonymous"
+  }
+}
+
+#let _lang-bucket-for-sort(lang, cn-first) = {
+  let is-zh = lang == "zh"
+  if cn-first {
+    if is-zh { 0 } else { 1 }
+  } else {
+    if is-zh { 1 } else { 0 }
+  }
+}
+
 #let _sort-entries(entries, style) = {
   if style == "numeric" {
     entries.sorted(key: it => it.order)
   } else {
-    // author-date: 按作者姓名排序，同作者则按第二个作者排序，以此类推，最后按年份排序
+    let cn-first = _cn-first.get()
+    let pinyin-override = _pinyin-override.get()
+    // author-date: 可选中外文分组；中文作者按姓的拼音排序，外文仍按拉丁字母序
     entries.sorted(key: it => {
       // 获取排序用的名字（优先 author，其次 editor）
       let names = it.parsed-names.at("author", default: ())
@@ -217,25 +255,21 @@
         names = it.parsed-names.at("editor", default: ())
       }
 
-      // 构建所有作者的排序键元组
-      let name-sort-keys = ()
+      let lang-bucket = _lang-bucket-for-sort(it.lang, cn-first)
+      let name-sort-keys = (lang-bucket,)
       if names.len() > 0 {
         for name in names {
-          name-sort-keys.push(lower(_get-sort-key-for-name(name)))
+          name-sort-keys.push(_family-sort-key-author-date(
+            name,
+            it.lang,
+            pinyin-override,
+          ))
         }
       } else {
-        // 无作者/编辑者时，根据语言使用排序键
-        if it.lang == "en" {
-          name-sort-keys.push("anonymous")
-        } else {
-          name-sort-keys.push("佚") // 佚 名 排在中文最后
-        }
+        name-sort-keys.push(_anonymous-sort-key-author-date(it.lang, pinyin-override))
       }
 
-      // 获取年份用于次级排序
       let year-sort-key = it.fields.at("year", default: "")
-
-      // 返回元组：(所有作者排序键..., 年份)
       name-sort-keys.push(year-sort-key)
       name-sort-keys
     })
@@ -290,8 +324,15 @@
     })
     .filter(x => x != none)
 
-  // 排序
-  _sort-entries(entries, current-style)
+  // 排序；著者-出版年制下列表顺序按姓排序，`order` 与列表顺序一致
+  let sorted = _sort-entries(entries, current-style)
+  if current-style == "author-date" {
+    sorted = sorted.enumerate().map(((i, e)) => {
+      e.order = i + 1
+      e
+    })
+  }
+  sorted
 }
 
 /// 获取所有参考文献条目（即使未被引用）
@@ -399,9 +440,10 @@
 
   // 重新分配 order（author-date 模式下按排序后的顺序）
   if current-style == "author-date" {
-    for (i, e) in all-entries.enumerate() {
+    all-entries = all-entries.enumerate().map(((i, e)) => {
       e.order = i + 1
-    }
+      e
+    })
   }
 
   all-entries

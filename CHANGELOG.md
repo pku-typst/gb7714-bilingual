@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- `cn-first` parameter for author-date style: controls whether Chinese entries appear before (`true`, default) or after (`false`) non-Chinese entries in the bibliography
+- `pinyin-override` parameter: passes through to `auto-pinyin`'s `to-pinyin(..., override: ...)` for polyphone disambiguation (e.g., `(重: "cho2ng")`)
+- Dependency on `auto-pinyin` 0.1.0
+
+### Changed
+
+- Author-date bibliography sorting now groups entries by language (Chinese vs. non-Chinese) and sorts Chinese authors by pinyin (via `auto-pinyin`, style `tone-num-end`)
+
+### Fixed
+
+- `order` field reassignment after author-date sorting was a no-op due to Typst value-type semantics in `for` loops; fixed in both `get-cited-entries` and `get-all-entries`
+
 ## [0.2.2] - 2026-02-22
 
 ### Added

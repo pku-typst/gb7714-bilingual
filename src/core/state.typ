@@ -15,6 +15,12 @@
   show-accessed: true, // 是否显示访问日期
 ))
 
+// 著者-出版年制：中文文献排在外文文献之前（仅影响参考文献列表排序）
+#let _cn-first = state("gb7714-cn-first", true)
+
+// 传给 auto-pinyin `to-pinyin`（style: tone-num-end）的 override 字典（多音字等）
+#let _pinyin-override = state("gb7714-pinyin-override", (:))
+
 // 用于标记引用的辅助函数（使用 metadata + query 模式）
 #let _cite-marker(key) = [#metadata(key)<gb7714-cite>]
 
