@@ -102,11 +102,17 @@
   // eprint + archiveprefix/eprinttype（biblatex 风格 arXiv 导出）
   let eprint = f.at("eprint", default: "")
   if eprint != "" {
-    let prefix = lower(f.at("archiveprefix", default: f.at("eprinttype", default: "")))
+    let prefix = lower(f.at("archiveprefix", default: f.at(
+      "eprinttype",
+      default: "",
+    )))
     if prefix == "arxiv" { return true }
   }
   // journal 包含 "arxiv"（常见的手写形式）
-  let journal = lower(f.at("journal", default: f.at("journaltitle", default: "")))
+  let journal = lower(f.at("journal", default: f.at(
+    "journaltitle",
+    default: "",
+  )))
   if journal.contains("arxiv") { return true }
   false
 }
@@ -158,7 +164,10 @@
     } else if raw-type == "unknown" and _is-standard-entry(entry) {
       // 标准文献：通过 number 前缀检测（可靠）
       "standard"
-    } else if raw-type in ("misc", "unpublished", "unknown") and _is-preprint-entry(entry) {
+    } else if (
+      raw-type in ("misc", "unpublished", "unknown")
+        and _is-preprint-entry(entry)
+    ) {
       "preprint"
     } else {
       raw-type

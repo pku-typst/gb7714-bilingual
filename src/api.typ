@@ -5,8 +5,8 @@
 #import "@preview/auto-pinyin:0.1.0": to-pinyin
 
 #import "core/state.typ": (
-  _bib-data, _cite-marker, _collect-citations, _compute-year-suffixes, _config,
-  _style, _version, _cn-first, _pinyin-override,
+  _bib-data, _cite-marker, _cn-first, _collect-citations,
+  _compute-year-suffixes, _config, _pinyin-override, _style, _version,
 )
 #import "core/language.typ": detect-language
 #import "core/utils.typ": format-citation-numbers
@@ -267,7 +267,10 @@
           ))
         }
       } else {
-        name-sort-keys.push(_anonymous-sort-key-author-date(it.lang, pinyin-override))
+        name-sort-keys.push(_anonymous-sort-key-author-date(
+          it.lang,
+          pinyin-override,
+        ))
       }
 
       let year-sort-key = it.fields.at("year", default: "")
@@ -328,10 +331,12 @@
   // 排序；著者-出版年制下列表顺序按姓排序，`order` 与列表顺序一致
   let sorted = _sort-entries(entries, current-style)
   if current-style == "author-date" {
-    sorted = sorted.enumerate().map(((i, e)) => {
-      e.order = i + 1
-      e
-    })
+    sorted = sorted
+      .enumerate()
+      .map(((i, e)) => {
+        e.order = i + 1
+        e
+      })
   }
   sorted
 }
@@ -441,10 +446,12 @@
 
   // 重新分配 order（author-date 模式下按排序后的顺序）
   if current-style == "author-date" {
-    all-entries = all-entries.enumerate().map(((i, e)) => {
-      e.order = i + 1
-      e
-    })
+    all-entries = all-entries
+      .enumerate()
+      .map(((i, e)) => {
+        e.order = i + 1
+        e
+      })
   }
 
   all-entries
