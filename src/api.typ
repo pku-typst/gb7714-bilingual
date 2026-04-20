@@ -12,7 +12,7 @@
 #import "core/utils.typ": format-citation-numbers
 #import "versions/mod.typ": get-citation-config, get-version-config
 #import "authors.typ": format-author-intext
-#import "renderers/mod.typ": render-entry
+#import "renderers/mod.typ": render-entry, resolve-entry-type
 
 /// 初始化 GB/T 7714 双语参考文献系统（内部实现）
 ///
@@ -38,10 +38,9 @@
   doc,
 ) = {
   // 加载 bib 数据
-  let bib-data = load-bibliography(bib-content)
-  // 创建隐藏的 bibliography（让 @key 语法工作）
-  // place() 使其不占据文档流空间，避免影响分页和定位
-  hide(place(bibliography(bytes(bib-content), title: none)))
+  // sentence-case-titles: false 避免 citegeist 将英文标题转为 sentence case
+  // （否则如 "Neural Networks for Text Classification" 会变为 "Neural networks for text classification"）
+  let bib-data = load-bibliography(bib-content, sentence-case-titles: false)
 
   // 设置状态
   _bib-data.update(bib-data)
@@ -170,6 +169,15 @@
   }
 
   doc
+
+  // 隐藏的 bibliography 让 Typst 识别 `@key` 引用语法。
+  // 放在文档末尾 + `place()` + `hide()` 三重保险，确保：
+  //   - 不产生可见内容
+  //   - 不占据正常流中的空间（place 默认浮动到当前位置但不推移后续内容）
+  //   - 不作为文档开头的“内容”触发 `pagebreak(weak: true, to: "odd")` 换页
+  //     （若放在开头，即使是 hide+place 也会让首页非空，导致 weak pagebreak 生效 +
+  //      to: "odd" 再跳一页，出现两页空白，见 issue #13）
+  hide(place(bibliography(bytes(bib-content), title: none)))
 }
 
 // ============================================================================
@@ -183,7 +191,9 @@
 /// - `order`: 引用顺序（用于 numeric 模式编号）
 /// - `year-suffix`: 年份消歧后缀（如 "a", "b"）
 /// - `lang`: 检测到的语言（"zh" 或 "en"）
-/// - `entry-type`: 条目类型（"article", "book" 等）
+/// - `entry-type`: 解析后的条目类型（如 @book + entrysubtype=standard 解析为 "standard"），
+///   用于区分已内部规范化的类型；需要原始 BibTeX 类型时使用 `raw-entry-type`
+/// - `raw-entry-type`: 原始 BibTeX 条目类型
 /// - `fields`: 原始字段字典（title, author, journal, year, ...）
 /// - `parsed-names`: 解析后的作者/编者名字
 /// - `rendered`: 使用默认渲染器生成的文本
@@ -317,7 +327,8 @@
         order: order,
         year-suffix: year-suffix,
         lang: lang,
-        entry-type: entry.at("entry_type", default: "misc"),
+        entry-type: resolve-entry-type(entry),
+        raw-entry-type: entry.at("entry_type", default: "misc"),
         fields: entry.at("fields", default: (:)),
         parsed-names: entry.at("parsed_names", default: (:)),
         rendered: rendered,
@@ -387,7 +398,8 @@
         order: i + 1,
         year-suffix: year-suffix,
         lang: lang,
-        entry-type: entry.at("entry_type", default: "misc"),
+        entry-type: resolve-entry-type(entry),
+        raw-entry-type: entry.at("entry_type", default: "misc"),
         fields: entry.at("fields", default: (:)),
         parsed-names: entry.at("parsed_names", default: (:)),
         rendered: rendered,
@@ -430,7 +442,8 @@
         order: cited-count + i + 1,
         year-suffix: year-suffix,
         lang: lang,
-        entry-type: entry.at("entry_type", default: "misc"),
+        entry-type: resolve-entry-type(entry),
+        raw-entry-type: entry.at("entry_type", default: "misc"),
         fields: entry.at("fields", default: (:)),
         parsed-names: entry.at("parsed_names", default: (:)),
         rendered: rendered,

@@ -9,6 +9,7 @@
 #import "report.typ": render-report
 #import "webpage.typ": render-webpage
 #import "misc.typ": render-misc
+#import "preprint.typ": render-preprint
 
 // 类型 -> 渲染函数映射
 #let _renderers = (
@@ -35,8 +36,8 @@
   // 报告
   "techreport": render-report,
   "report": render-report,
-  // 预印本/档案
-  "preprint": render-article,
+  // 预印本：按 GB/T 7714—2025 格式渲染（日期用圆括号包裹）
+  "preprint": render-preprint,
   "unpublished": render-article,
   // 网页/在线资源
   "online": render-webpage,
@@ -117,24 +118,13 @@
   false
 }
 
-/// 根据类型选择渲染函数
-#let render-entry(
-  entry,
-  lang,
-  year-suffix: "",
-  style: "numeric",
-  version: "2025",
-  config: (show-url: true, show-doi: true, show-accessed: true),
-) = {
-  let raw-type = lower(entry.entry_type)
-
-  // 智能类型检测（针对 citegeist 不支持的类型）
-  // 优先级：mark/usera > entrysubtype/note > number前缀检测 > 原始类型
+/// 解析条目的规范化类型（如 @book + entrysubtype=standard → "standard"）
+/// 返回解析后的 entry_type，供渲染器和外部 API 使用
+#let resolve-entry-type(entry) = {
+  let raw-type = lower(entry.at("entry_type", default: "misc"))
   let mark = _get-mark(entry)
-  let medium = _get-medium(entry)
 
-  let entry-type = if mark != none {
-    // 用户通过 mark/usera 字段手动声明类型标识
+  if mark != none {
     // mark 值直接映射到类型（S -> standard, N -> newspaper 等）
     let mark-to-type = (
       "S": "standard",
@@ -147,32 +137,44 @@
       "P": "patent",
       "G": "collection",
       "EB": "online",
-      "DB": "misc", // 数据库，使用 misc 渲染但 mark 会被传递
-      "CP": "misc", // 计算机程序
-      "CM": "misc", // 地图
-      "DS": "misc", // 数据集
-      "A": "preprint", // 档案/预印本
-      "PP": "preprint", // 预印本（2025）
-      "Z": "misc", // 其他
+      "DB": "misc",
+      "CP": "misc",
+      "CM": "misc",
+      "DS": "misc",
+      "A": "preprint",
+      "PP": "preprint",
+      "Z": "misc",
     )
-    mark-to-type.at(upper(mark), default: raw-type)
-  } else {
-    // 尝试通过 entrysubtype/note 检测
-    let subtype-detected = _detect-subtype(entry, raw-type)
-    if subtype-detected != none {
-      subtype-detected
-    } else if raw-type == "unknown" and _is-standard-entry(entry) {
-      // 标准文献：通过 number 前缀检测（可靠）
-      "standard"
-    } else if (
-      raw-type in ("misc", "unpublished", "unknown")
-        and _is-preprint-entry(entry)
-    ) {
-      "preprint"
-    } else {
-      raw-type
-    }
+    return mark-to-type.at(upper(mark), default: raw-type)
   }
+
+  let subtype-detected = _detect-subtype(entry, raw-type)
+  if subtype-detected != none {
+    return subtype-detected
+  }
+  if raw-type == "unknown" and _is-standard-entry(entry) {
+    return "standard"
+  }
+  if (
+    raw-type in ("misc", "unpublished", "unknown") and _is-preprint-entry(entry)
+  ) {
+    return "preprint"
+  }
+  raw-type
+}
+
+/// 根据类型选择渲染函数
+#let render-entry(
+  entry,
+  lang,
+  year-suffix: "",
+  style: "numeric",
+  version: "2025",
+  config: (show-url: true, show-doi: true, show-accessed: true),
+) = {
+  let entry-type = resolve-entry-type(entry)
+  let mark = _get-mark(entry)
+  let medium = _get-medium(entry)
 
   // 查找渲染函数，未找到则使用 misc
   let renderer = _renderers.at(entry-type, default: render-misc)
