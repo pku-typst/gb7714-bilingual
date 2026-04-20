@@ -21,11 +21,12 @@
 )
 
 /// 从条目字段中拼接文本用于语言探测
+/// 注意：空数组的 `.join(" ")` 在 Typst 中返回 `none`，需用 default 兜底为 ""
 #let _collect-detect-text(fields) = {
-  _LANG_DETECT_FIELDS
+  let parts = _LANG_DETECT_FIELDS
     .map(k => str(fields.at(k, default: "")))
     .filter(x => x != "")
-    .join(" ")
+  if parts.len() == 0 { "" } else { parts.join(" ") }
 }
 
 /// 从显式字段（language / langid）读取语言；未显式声明返回 none

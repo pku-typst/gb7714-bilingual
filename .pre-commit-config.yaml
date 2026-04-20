@@ -1,25 +1,41 @@
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+minimum_pre_commit_version: "3.5.0"
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
       - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: check-toml
       - id: check-yaml
       - id: check-added-large-files
         args: ["--maxkb=500"]
 
+  # typstyle — auto-format .typ sources in place.
+  # Fails the commit if any file was reformatted; re-stage and retry.
   - repo: local
     hooks:
       - id: typstyle
         name: typstyle
         entry: typstyle -i
         language: system
-        types: [file]
+        types_or: [file]
         files: \.typ$
+        # Skip tytanic's auto-generated reference snapshots / diffs
+        exclude: ^tests/[^/]+/(ref|diff|out)/
 
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.7.4
     hooks:
       - id: prettier
+        # Limit prettier to the formats it handles in this repo
+        types_or: [yaml, json, markdown]
+        exclude: ^tests/[^/]+/(ref|diff|out)/
