@@ -31,11 +31,13 @@
   ""
 }
 
-/// 创建日期：优先 `date`，其次 `year`
-#let _preprint-created-date(f, year-with-suffix) = {
+/// 创建日期：优先 `date`，其次 `year`（不含消歧后缀）
+/// year-suffix (a/b/c) 仅用于 author-date 书目条目中的年份消歧，
+/// 不应出现在 `（发布日期）` 里（例如不能输出 `（2023a）`）
+#let _preprint-created-date(f, plain-year) = {
   let raw-date = str(f.at("date", default: ""))
   if raw-date != "" { return raw-date }
-  year-with-suffix
+  plain-year
 }
 
 /// 预印本通用渲染
@@ -50,10 +52,15 @@
   let f = entry.fields
   let authors = format-authors(entry.parsed_names, lang, version: version)
   let title = f.at("title", default: "")
-  let year = str(f.at("year", default: "")) + year-suffix
+  // plain-year: bare bib year, used for the （创建日期）fallback and for the
+  // `created != plain-year` guard below.
+  // year: what the bibliography entry prints; year-suffix (a/b/c) appended
+  // only in author-date mode to disambiguate same-author same-year entries.
+  let plain-year = str(f.at("year", default: ""))
+  let year = plain-year + year-suffix
   let edition = str(f.at("edition", default: ""))
   let source = _preprint-source(f)
-  let created = _preprint-created-date(f, year)
+  let created = _preprint-created-date(f, plain-year)
 
   let url = f.at("url", default: "")
   let doi = f.at("doi", default: "")
@@ -89,8 +96,9 @@
   // 平台 + 创建日期：`<source>（<date>）`，中间不加标点
   // author-date 模式下年份已在作者块；若 `date` 含完整日期（与仅年份不同）仍保留在括号内
   // 无 source 时跳过整段：避免单独出现 `（2023）` 这样没有归属的日期
+  // 注：与 plain-year 比较（不含消歧后缀），否则 year="2023a" 会让 created="2023" 仍然通过判断
   let include-date = (
-    style == "numeric" or (created != "" and created != year)
+    style == "numeric" or (created != "" and created != plain-year)
   )
   if source != "" {
     let source-part = source
