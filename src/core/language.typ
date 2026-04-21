@@ -29,17 +29,28 @@
   if parts.len() == 0 { "" } else { parts.join(" ") }
 }
 
+// BCP-47 primary language subtags we recognize. 分词后做精确匹配，避免
+// 子串误判（`french`/`japanese`/`korean` 都会把 `en` 作为子串匹配）。
+// 多重子标签如 `zh-Hans-CN` / `en-US` 经下面的非字母分词后会拆成 `zh` / `en`，
+// 直接命中主标签即可。
+#let _ZH_LANG_TOKENS = ("zh", "chinese")
+#let _EN_LANG_TOKENS = ("en", "english")
+
 /// 从显式字段（language / langid）读取语言；未显式声明返回 none
 /// 防御性地将字段值强制为字符串，避免 bib 解析器偶尔返回 content/int 等类型时抛错
 #let _explicit-language(fields) = {
   for key in ("language", "langid") {
     let v = lower(str(fields.at(key, default: "")))
     if v == "" { continue }
-    if "zh" in v or "chinese" in v or "中" in v {
-      return "zh"
-    }
-    if "en" in v or "english" in v {
-      return "en"
+
+    // 直接命中汉字（如 "中文"、"中"）
+    if v.find(regex("\p{Han}")) != none { return "zh" }
+
+    // 按非字母字符分词后做精确匹配
+    let tokens = v.split(regex("[^a-z]+")).filter(t => t != "")
+    for token in tokens {
+      if token in _ZH_LANG_TOKENS { return "zh" }
+      if token in _EN_LANG_TOKENS { return "en" }
     }
   }
   none

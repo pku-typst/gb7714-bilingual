@@ -19,6 +19,22 @@
 #let e2 = (fields: (langid: "zh", title: "An English Title"))
 #assert.eq(detect-language(e2), "zh")
 
+// Substring-match false positive regression: "french" / "japanese" / "korean"
+// contain "en" as a substring and must NOT be classified as English.
+#let e1b = (fields: (language: "french"))
+#assert.eq(detect-language(e1b), "en") // defaults to en (no Han, no zh tag)
+// More importantly — not mistakenly classified via the explicit branch.
+// Add a Han character in the title to ensure heuristic wins over a bogus
+// "en" substring match in a non-English language tag.
+#let e1c = (fields: (language: "french", title: "论文写作指南"))
+#assert.eq(detect-language(e1c), "zh")
+
+// BCP-47 regional tags are recognized
+#let e1d = (fields: (language: "en-US"))
+#assert.eq(detect-language(e1d), "en")
+#let e1e = (fields: (langid: "zh-Hans-CN"))
+#assert.eq(detect-language(e1e), "zh")
+
 // 2. Pure Chinese content, no language field → detected as zh
 #let e3 = (fields: (title: "信息与文献", author: "张伟"))
 #assert.eq(detect-language(e3), "zh")

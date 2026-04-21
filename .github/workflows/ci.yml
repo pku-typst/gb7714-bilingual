@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,6 +44,11 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    # configure-pages + upload-pages-artifact need pages:write; id-token is
+    # not required at build time (only deploy uses OIDC via deploy-pages).
+    permissions:
+      contents: read
+      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

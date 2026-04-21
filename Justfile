@@ -80,16 +80,17 @@ typstyle-write:
     {{ typstyle }} -i src lib.typ example.typ example-authordate.typ tests
 alias tw := typstyle-write
 
-# Run pre-commit (prefer prek when available, fallback to pre-commit)
+# Run pre-commit (prefer prek when available, fallback to pre-commit).
+# Uses the global bash shell; if prek is present we always run prek and let
+# any failure propagate — only the absence of prek falls back to pre-commit.
+# Works on any platform that has bash (macOS / Linux / Windows + Git Bash).
 [group("checks")]
-[unix]
 pre-commit:
-    if command -v prek > /dev/null 2>&1; then prek run --all-files; else pre-commit run --all-files; fi
-
-[group("checks")]
-[windows]
-pre-commit:
-    @where prek >nul 2>&1 && prek run --all-files || pre-commit run --all-files
+    if command -v prek > /dev/null 2>&1; then \
+      prek run --all-files; \
+    else \
+      pre-commit run --all-files; \
+    fi
 
 # Run every check: tests + formatter + pre-commit hooks
 [group("checks")]
