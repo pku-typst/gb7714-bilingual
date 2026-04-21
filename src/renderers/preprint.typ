@@ -78,6 +78,9 @@
 
   let parts = ()
 
+  // author-date 模式下，是否已把年份放进作者块
+  let year-in-author-block = style == "author-date" and authors != ""
+
   // 作者 / 标题
   if style == "author-date" {
     if authors != "" {
@@ -94,18 +97,27 @@
   }
 
   // 平台 + 创建日期：`<source>（<date>）`，中间不加标点
-  // author-date 模式下年份已在作者块；若 `date` 含完整日期（与仅年份不同）仍保留在括号内
-  // 无 source 时跳过整段：避免单独出现 `（2023）` 这样没有归属的日期
+  // author-date 且已在作者块中打印过年份时，只在 `date` 含更精确的日月信息时重复
+  // （避免重复年份）。numeric 模式、或 author-date 下没有作者可挂靠年份时，
+  // 始终输出创建日期，以免年份整体丢失。
   // 注：与 plain-year 比较（不含消歧后缀），否则 year="2023a" 会让 created="2023" 仍然通过判断
-  let include-date = (
-    style == "numeric" or (created != "" and created != plain-year)
-  )
+  let include-date = if year-in-author-block {
+    created != "" and created != plain-year
+  } else {
+    created != ""
+  }
   if source != "" {
     let source-part = source
     if include-date and created != "" {
       source-part += punct.lparen + created + punct.rparen
     }
     parts.push(source-part)
+  } else if (
+    include-date and created != "" and not year-in-author-block
+  ) {
+    // 没有 source 可依附；仅当年份未在作者块中显示时，单独输出 `（创建日期）`
+    // 确保年份不会彻底丢失（例如无平台、无作者的匿名条目）
+    parts.push(punct.lparen + created + punct.rparen)
   }
 
   let result = smart-join(parts)

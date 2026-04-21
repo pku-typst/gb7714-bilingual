@@ -47,4 +47,13 @@
   for e in entries {
     assert.eq(e.lang, "en", message: "entry " + e.key + " should be en")
   }
+
+  // Sentence-case regression: citegeist is called with
+  // sentence-case-titles: false, so mixed-case English titles must be
+  // preserved verbatim. Would fail ("Neural networks for text classification")
+  // if the sentence-case option is ever flipped back on upstream.
+  assert.eq(
+    plain.fields.title,
+    "Neural Networks for Text Classification",
+  )
 }

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - English titles are no longer lowercased by citegeist's default sentence-case transformation (e.g., `Neural Networks for Text Classification` now renders verbatim instead of `Neural networks for text classification`). `load-bibliography` is now called with `sentence-case-titles: false`.
 - The hidden `bibliography()` that backs `@key` resolution is now emitted at the _end_ of the document instead of the start. When users put `pagebreak(weak: true, to: "odd")` before their first heading, the previous position caused Typst to treat the opening page as non-empty, firing the weak pagebreak and (with `to: "odd"`) inserting up to two blank pages before any content.
+- An empty `mark` / `usera` / `medium` field (e.g., `mark = {}` in the bib) is now treated as unset. Previously the empty string was accepted as an explicit type override, bypassing `entrysubtype` / `note` detection, standard-by-number-prefix inference, and the arXiv preprint heuristic.
+- Explicit `language` / `langid` matching now tokenizes the value on non-alphabetic characters and checks against an exact BCP-47 primary-subtag allowlist. Previously substring matching would misclassify `french`, `japanese`, `korean` etc. as English because those tokens contain `en`.
 
 ## [0.2.3] - 2026-03-27
 

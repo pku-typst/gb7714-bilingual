@@ -5,8 +5,10 @@
 //   - cited date `[YYYY-MM-DD]` adjacent to the creation date
 //   - URL then DOI at the end, hyperlinked
 //
-// Uses only Typst-embedded fonts to stay stable across CI.
-// Regenerate the reference with `tt update preprint-format`.
+// Requires the bundled SimSun font to render GB/T 7714—2025's full-width
+// punctuation (`，`, `（`, `）`) — run tests with `just test` / `tt run --font-path fonts`
+// (CI and the top-level Justfile do this). Regenerate the reference snapshot
+// with `just test-update preprint-format`.
 
 #import "/lib.typ": gb7714-bibliography, init-gb7714
 
