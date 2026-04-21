@@ -115,9 +115,11 @@
   } else if (
     include-date and created != "" and not year-in-author-block
   ) {
-    // 没有 source 可依附；仅当年份未在作者块中显示时，单独输出 `（创建日期）`
-    // 确保年份不会彻底丢失（例如无平台、无作者的匿名条目）
-    parts.push(punct.lparen + created + punct.rparen)
+    // 没有 source 可依附；仅当年份未在作者块中显示时，单独输出裸日期
+    // （不加圆括号——`（...）` 仅用作平台后的日期注记，无平台时写成独立段落
+    // 更符合 GB/T 7714 一般样式：`题名[PP/OL]. 2023. URL.`）
+    // 目的是确保年份不会彻底丢失（例如无平台、无作者的匿名条目）
+    parts.push(created)
   }
 
   let result = smart-join(parts)
