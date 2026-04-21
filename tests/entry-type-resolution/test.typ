@@ -78,5 +78,22 @@
 // `usera` is the biblatex-recommended alias for `mark`
 #assert.eq(resolve-entry-type(entry("misc", usera: "S")), "standard")
 
+// An empty `mark` (e.g., `mark = {}` in the bib) must NOT be treated as an
+// explicit override — the entry should still fall through to subtype/
+// heuristic detection.
+#assert.eq(
+  resolve-entry-type(entry(
+    "misc",
+    mark: "",
+    archiveprefix: "arXiv",
+    eprint: "2303.12345",
+  )),
+  "preprint",
+)
+#assert.eq(
+  resolve-entry-type(entry("book", mark: "", entrysubtype: "standard")),
+  "standard",
+)
+
 // 6. Missing entry_type defaults to "misc"
 #assert.eq(resolve-entry-type((fields: (:))), "misc")

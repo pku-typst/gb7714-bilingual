@@ -53,17 +53,24 @@
   std-prefixes.any(p => upper(number).starts-with(p))
 }
 
+// 工具：把空字符串归一化为 `none`，避免 `mark = {}` 这种空值被误认作“用户显式声明”
+#let _normalize-empty(v) = if type(v) == str and v == "" { none } else { v }
+
 // 获取用户指定的 mark/usera 字段（用于手动声明类型标识）
 // biblatex 推荐使用 usera，mark 是为了兼容 gbt7714 宏包
+// 空字符串视为未设置——否则 mark = {} 会走进 override 分支并绕过
+// entrysubtype / note / number 前缀等启发式检测。
 #let _get-mark(entry) = {
   let f = entry.at("fields", default: (:))
-  f.at("mark", default: f.at("usera", default: none))
+  let mark = _normalize-empty(f.at("mark", default: none))
+  if mark != none { return mark }
+  _normalize-empty(f.at("usera", default: none))
 }
 
 // 获取用户指定的 medium 字段（用于手动声明载体标识）
 #let _get-medium(entry) = {
   let f = entry.at("fields", default: (:))
-  f.at("medium", default: none)
+  _normalize-empty(f.at("medium", default: none))
 }
 
 // 通过 entrysubtype 或 note 字段检测特殊类型
