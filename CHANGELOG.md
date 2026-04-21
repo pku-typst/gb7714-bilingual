@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Dedicated preprint renderer: formats `[PP/OL]` / `[A/OL]` entries per GB/T 7714—2025 § preprint template (`主要责任者. 题名[PP/OL]. 版本. 预印本出版平台（创建或修改日期）[引用日期]. 获取和访问路径. 永久标识符.`). Platform name is taken verbatim from `journal` / `journaltitle` / `howpublished` / `publisher`, falling back to `archiveprefix` / `eprinttype` when none are set. Creation date `（YYYY-MM-DD）` is placed directly after the platform with no separator and flows straight into the cited date `[YYYY-MM-DD]`. Under GB/T 7714—2015 the same entry resolves to `[A/OL]` via the existing archive type map. Example (numeric, 2025) for a `@misc` with `archiveprefix = {arXiv}`, `eprint = {2303.12345}`, `year = {2023}`, `url = {https://arxiv.org/abs/2303.12345}`, `urldate = {2024-01-10}`, `doi = {10.48550/arXiv.2303.12345}`:
+  ```text
+  Brown T，Smith J. Large Language Models: A Survey[PP/OL]. arXiv（2023）[2024-01-10]. https://arxiv.org/abs/2303.12345. DOI: 10.48550/arXiv.2303.12345.
+  ```
+- `raw-entry-type` field on entries returned by `get-cited-entries`/`get-all-entries`: exposes the original BibTeX entry type for callers that need it.
+
+### Changed
+
+- `entry-type` returned by `get-cited-entries`/`get-all-entries` is now the resolved type (e.g., `@book` with `entrysubtype = {standard}` is reported as `standard`), matching what the internal renderers use. Callers that relied on the raw BibTeX type should read `raw-entry-type` instead.
+- Language auto-detection now scans a wider set of fields (title, authors, editor, translator, journal, booktitle, publisher, organization, institution, school, address, location, series, note, howpublished) in addition to the previous title + author, so entries that omit `language`/`langid` are classified more reliably. The Han-character threshold is unchanged (two or more consecutive Han characters → Chinese), so stray foreign-language transliterations in an English entry still don't flip the language.
+
+### Fixed
+
+- English titles are no longer lowercased by citegeist's default sentence-case transformation (e.g., `Neural Networks for Text Classification` now renders verbatim instead of `Neural networks for text classification`). `load-bibliography` is now called with `sentence-case-titles: false`.
+- The hidden `bibliography()` that backs `@key` resolution is now emitted at the _end_ of the document instead of the start. When users put `pagebreak(weak: true, to: "odd")` before their first heading, the previous position caused Typst to treat the opening page as non-empty, firing the weak pagebreak and (with `to: "odd"`) inserting up to two blank pages before any content.
+- An empty `mark` / `usera` / `medium` field (e.g., `mark = {}` in the bib) is now treated as unset. Previously the empty string was accepted as an explicit type override, bypassing `entrysubtype` / `note` detection, standard-by-number-prefix inference, and the arXiv preprint heuristic.
+- Explicit `language` / `langid` matching now tokenizes the value on non-alphabetic characters and checks against an exact BCP-47 primary-subtag allowlist. Previously substring matching would misclassify `french`, `japanese`, `korean` etc. as English because those tokens contain `en`.
+
 ## [0.2.3] - 2026-03-27
 
 ### Added
