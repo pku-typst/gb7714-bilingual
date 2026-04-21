@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Brown T，Smith J. Large Language Models: A Survey[PP/OL]. arXiv（2023）[2024-01-10]. https://arxiv.org/abs/2303.12345. DOI: 10.48550/arXiv.2303.12345.
   ```
 - `raw-entry-type` field on entries returned by `get-cited-entries`/`get-all-entries`: exposes the original BibTeX entry type for callers that need it.
+- Public re-exports (for `full-control` callbacks and other custom rendering): `format-authors`, `format-author-intext`, `detect-language`, `get-all-entries`. Previously only `get-cited-entries` was reachable from `lib.typ`, forcing users to import from internal paths (e.g., `src/authors.typ`).
 
 ### Changed
 

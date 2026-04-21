@@ -17,8 +17,13 @@
 
 // 导入内部实现
 #import "src/api.typ": (
-  gb7714-bibliography, get-cited-entries, init-gb7714-impl, multicite,
+  gb7714-bibliography, get-all-entries, get-cited-entries, init-gb7714-impl,
+  multicite,
 )
+// 重新导出作者格式化工具，便于用户在 `full-control` 回调中复用默认的作者样式
+#import "src/authors.typ": format-author-intext, format-authors
+// 重新导出语言检测，便于用户按语言分支处理
+#import "src/core/language.typ": detect-language
 
 /// 初始化 GB/T 7714 双语参考文献系统
 ///
