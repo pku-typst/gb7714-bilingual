@@ -26,6 +26,7 @@
 /// - cn-first: 仅 `style: "author-date"`。`true`（默认）中文条目排在外文之前，`false` 外文在前
 /// - pinyin-override: 仅 `author-date` 且中文条目。传给 `to-pinyin(..., style: "tone-num-end", override: ...)`；
 ///   override 中的音节须与 `tone-num-end` 形式一致（如 `cho2ng`），见 auto-pinyin 文档
+/// - range-tilde: 顺序编码制下连续编号区间改用 "~" 连接（默认 false，即用 "-"）
 #let init-gb7714-impl(
   bib-content,
   style: "numeric",
@@ -35,6 +36,7 @@
   show-accessed: true,
   cn-first: true,
   pinyin-override: (:),
+  range-tilde: false,
   doc,
 ) = {
   // 加载 bib 数据
@@ -50,6 +52,7 @@
     show-url: show-url,
     show-doi: show-doi,
     show-accessed: show-accessed,
+    range-tilde: range-tilde,
   ))
   _cn-first.update(cn-first)
   _pinyin-override.update(pinyin-override)
@@ -660,13 +663,14 @@
       // 格式：[1：250, 2-4]（整体在一个方括号内，用逗号分隔）
       let parts = ()
       let pending-orders = () // 待压缩的编号
+      let range-sep = if _config.get().at("range-tilde", default: false) { "~" } else { "-" }
 
       for item in normalized {
         let order = citations.at(item.key, default: 0)
         if item.supplement != none {
           // 有 supplement：先输出之前积累的无 supplement 编号，再输出当前
           if pending-orders.len() > 0 {
-            let formatted = format-citation-numbers(pending-orders)
+            let formatted = format-citation-numbers(pending-orders, sep: range-sep)
             parts.push(formatted)
             pending-orders = ()
           }
@@ -680,7 +684,7 @@
 
       // 处理剩余的无 supplement 编号
       if pending-orders.len() > 0 {
-        let formatted = format-citation-numbers(pending-orders)
+        let formatted = format-citation-numbers(pending-orders, sep: range-sep)
         parts.push(formatted)
       }
 
