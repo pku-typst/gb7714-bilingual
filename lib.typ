@@ -45,6 +45,8 @@
   show-accessed: true,
   cn-first: true,
   pinyin-override: (:),
+  bib-title: auto,
+  bib-full-control: auto,
   doc,
 ) = {
   // 调用内部实现
@@ -55,6 +57,8 @@
     show-url: show-url,
     show-doi: show-doi,
     show-accessed: show-accessed,
+    bib-title: bib-title,
+    bib-full-control: bib-full-control,
     cn-first: cn-first,
     pinyin-override: pinyin-override,
     doc,
