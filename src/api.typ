@@ -5,6 +5,7 @@
 #import "@preview/auto-pinyin:0.1.0": to-pinyin
 
 #import "core/state.typ": (
+  _bib-raw, _has-table,
   _bib-data, _cite-marker, _cn-first, _collect-citations,
   _compute-year-suffixes, _config, _pinyin-override, _style, _version,
 )
@@ -44,6 +45,7 @@
 
   // 设置状态
   _bib-data.update(bib-data)
+  _bib-raw.update(bib-content)
   _style.update(style)
   _version.update(version)
   _config.update((
@@ -170,14 +172,14 @@
 
   doc
 
-  // 隐藏的 bibliography 让 Typst 识别 `@key` 引用语法。
-  // 放在文档末尾 + `place()` + `hide()` 三重保险，确保：
-  //   - 不产生可见内容
-  //   - 不占据正常流中的空间（place 默认浮动到当前位置但不推移后续内容）
-  //   - 不作为文档开头的“内容”触发 `pagebreak(weak: true, to: "odd")` 换页
-  //     （若放在开头，即使是 hide+place 也会让首页非空，导致 weak pagebreak 生效 +
-  //      to: "odd" 再跳一页，出现两页空白，见 issue #13）
-  hide(place(bibliography(bytes(bib-content), title: none)))
+  // 仅当文档内没有任何文献表时，才在末尾注册 @key 所需的原生表。
+  // 放在末尾是因为任何前置内容都会让 pagebreak(weak: true, to: "odd") 生效（#13）；
+  // 而无条件追加又会在用户结尾 set page(...) 之后多出一页（#22），故改为条件回落。
+  context {
+    if not _has-table.get() {
+      hide(place(bibliography(bytes(_bib-raw.get()), title: none)))
+    }
+  }
 }
 
 // ============================================================================
@@ -511,6 +513,13 @@
   full-control: none,
 ) = {
   context {
+    // 在第一张表的位置注册 @key 所需的原生表：此处已有用户内容，不会额外开页，
+    // 也不在文档开头产生内容（避免 #13）。多张表只注册一次，防止 label 重复。
+    let first-table = not _has-table.get()
+    _has-table.update(true)
+    if first-table {
+      hide(place(bibliography(bytes(_bib-raw.get()), title: none)))
+    }
     let bib = _bib-data.get()
 
     // 处理 auto 标题 - 基于正文语言而非文献语言

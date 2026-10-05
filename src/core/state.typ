@@ -5,6 +5,9 @@
 // ============================================================
 
 #let _bib-data = state("gb7714-bib-data", (:))
+#let _bib-raw = state("gb7714-bib-raw", "")
+
+#let _has-table = state("gb7714-has-table", false)
 #let _style = state("gb7714-style", "numeric")
 #let _version = state("gb7714-version", "2025")  // "2015" 或 "2025"
 
