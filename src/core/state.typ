@@ -13,6 +13,7 @@
   show-url: true, // 是否显示 URL
   show-doi: true, // 是否显示 DOI
   show-accessed: true, // 是否显示访问日期
+  punct-width: auto, // 标点宽度：auto / "half" / "full" / 按类覆盖字典
 ))
 
 // 著者-出版年制：中文文献排在外文文献之前（仅影响参考文献列表排序）

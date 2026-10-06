@@ -1,6 +1,6 @@
 // GB/T 7714 双语参考文献系统 - 作者格式化模块
 
-#import "versions/mod.typ": get-author-format-rules, get-terms
+#import "versions/mod.typ": get-author-format-rules, get-punctuation, get-terms
 
 /// 格式化作者列表
 /// - parsed-names: citegeist 解析的 parsed_names
@@ -33,10 +33,8 @@
   let terms = get-terms(version, lang)
   let rules = get-author-format-rules(version)
 
-  // 作者分隔符：根据版本选择（CSL 规范）
-  // 2015: 默认英文逗号 ", "
-  // 2025: 中文逗号 "，"（<name delimiter="，"/>）
-  let delimiter = if version == "2025" { "，" } else { ", " }
+  // 作者分隔符取自标点配置（2015 ", " / 2025 "，"，并跟随 punct-width）
+  let delimiter = get-punctuation(version, lang).comma
 
   // 格式化单个名字
   let format-name(name) = {
